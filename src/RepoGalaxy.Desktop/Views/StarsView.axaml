@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RepoGalaxy.Desktop.Views.StarsView" x:CompileBindings="False">
+  <Grid Margin="28,22,28,26" RowDefinitions="Auto,Auto,*,Auto">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="5">
+        <TextBlock Text="我的 Star" Classes="h1"/>
+        <TextBlock Text="已 Star 的仓库，按时间、语言和关注度快速整理。" Classes="muted"/>
+      </StackPanel>
+      <Button Grid.Column="1" Classes="subtle" Command="{Binding RefreshCommand}" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="7">
+          <PathIcon Data="{StaticResource IconRefresh}" Width="16" Height="16"/>
+          <TextBlock Text="刷新"/>
+        </StackPanel>
+      </Button>
+    </Grid>
+    <Border Grid.Row="1" Classes="soft-card" Margin="0,20,0,14">
+      <Grid ColumnDefinitions="*,180,180" ColumnSpacing="10">
+        <TextBlock Text="{Binding StatusMessage}" Classes="meta" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"/>
+        <ComboBox Grid.Column="2" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"/>
+      </Grid>
+    </Border>
+    <Grid Grid.Row="2">
+      <ProgressBar Height="3" IsIndeterminate="True" IsVisible="{Binding IsLoading}" VerticalAlignment="Top"/>
+      <ListBox Classes="clean" ItemsSource="{Binding Repositories}" SelectedItem="{Binding SelectedRepository}">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="card" Margin="0,0,0,9" Padding="18,15">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <Border Width="42" Height="42" CornerRadius="0" Background="{DynamicResource AccentSoftBrush}">
+                  <PathIcon Data="M10,2 L12.5,7.2 L18,8 L14,12 L15,18 L10,15 L5,18 L6,12 L2,8 L7.5,7.2 Z"
+                            Width="22" Height="22" Foreground="{DynamicResource AccentBrush}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="6">
+                  <TextBlock Text="{Binding FullName}" FontSize="16" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Description}" Classes="muted" TextTrimming="CharacterEllipsis"/>
+                  <StackPanel Orientation="Horizontal" Spacing="14">
+                    <TextBlock Text="{Binding PrimaryLanguage}" Classes="meta" Foreground="{DynamicResource AccentTextBrush}"/>
+                    <TextBlock Text="{Binding StarsFormatted, StringFormat='★ {0}'}" Classes="meta"/>
+                    <TextBlock Text="{Binding ForksFormatted, StringFormat='Fork {0}'}" Classes="meta"/>
+                    <TextBlock Text="{Binding UpdatedText, StringFormat='更新 {0}'}" Classes="meta"/>
+                  </StackPanel>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <Border IsVisible="{Binding IsAuthenticationRequired}" Classes="card" MaxWidth="590" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="36">
+        <StackPanel Spacing="10" HorizontalAlignment="Center">
+          <PathIcon Data="M10,2 L12.5,7.2 L18,8 L14,12 L15,18 L10,15 L5,18 L6,12 L2,8 L7.5,7.2 Z"
+                    Width="34" Height="34" Foreground="{DynamicResource AccentBrush}"/>
+          <TextBlock Text="登录后查看你 Star 的仓库" FontSize="20" FontWeight="SemiBold"/>
+          <TextBlock Text="请使用顶部的“登录 GitHub”，验证成功后这里会读取你 Star 的仓库列表。" Classes="muted" TextAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+      <Border IsVisible="{Binding IsEmpty}" Classes="card" MaxWidth="520" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="34">
+        <StackPanel Spacing="9" HorizontalAlignment="Center">
+          <TextBlock Text="没有找到匹配的 Star 仓库" FontSize="20" FontWeight="SemiBold"/>
+          <TextBlock Text="可以清空搜索或更换语言筛选；如果 GitHub 上有但这里没显示，点刷新重试。" Classes="muted"/>
+        </StackPanel>
+      </Border>
+    </Grid>
+    <Button Grid.Row="3" Classes="subtle" Margin="0,12,0,0"
+            IsVisible="{Binding HasMore}"
+            Command="{Binding LoadMoreCommand}"
+            HorizontalAlignment="Center" HorizontalContentAlignment="Center"
+            MinWidth="220" Padding="14,9">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <ProgressBar Width="14" Height="14" IsIndeterminate="True" IsVisible="{Binding IsLoadingMore}"/>
+        <TextBlock Text="加载更多"/>
+      </StackPanel>
+    </Button>
+  </Grid>
+</UserControl>

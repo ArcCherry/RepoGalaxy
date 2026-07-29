@@ -43,6 +43,9 @@ public sealed class LocalSearchSuggestionProvider : ILocalSearchSuggestionProvid
             MyReposViewModel repositories => repositories.Repositories
                 .Where(x => Contains(x.FullName, query) || Contains(x.Description, query))
                 .Select(x => new SearchSuggestion($"owned:{x.Repository.Id}", "我的仓库", x.FullName, $"{x.PrimaryLanguage} · {x.Description}", query)),
+            StarsViewModel stars => stars.Repositories
+                .Where(x => Contains(x.FullName, query) || Contains(x.Description, query))
+                .Select(x => new SearchSuggestion($"starred:{x.Repository.Id}", "Star", x.FullName, $"{x.PrimaryLanguage} · {x.Description}", query)),
             LocalReposViewModel local => local.LocalRepositories
                 .Where(x => Contains(x.Name, query) || Contains(x.LocalPath, query))
                 .Select(x => new SearchSuggestion($"local:{x.Id}", "本地仓库", x.Name, x.LocalPath, query)),

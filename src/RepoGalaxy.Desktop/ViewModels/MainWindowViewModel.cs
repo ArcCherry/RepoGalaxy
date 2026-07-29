@@ -39,6 +39,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public LibraryViewModel Library { get; }
     public NotificationsViewModel Notifications { get; }
     public MyReposViewModel MyRepos { get; }
+    public StarsViewModel Stars { get; }
     public LocalReposViewModel LocalRepos { get; }
     public SettingsViewModel Settings { get; }
     public RepositoryDetailsViewModel Details { get; }
@@ -92,6 +93,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         LibraryViewModel library,
         NotificationsViewModel notificationsView,
         MyReposViewModel myRepos,
+        StarsViewModel stars,
         LocalReposViewModel localRepos,
         SettingsViewModel settings,
         RepositoryDetailsViewModel details,
@@ -111,6 +113,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Library = library;
         Notifications = notificationsView;
         MyRepos = myRepos;
+        Stars = stars;
         LocalRepos = localRepos;
         Settings = settings;
         Details = details;
@@ -141,6 +144,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         WorkspaceNavigation =
         [
             new("MyRepos", "我的仓库", "\uE8B7", "M4,5 L8,5 L10,7 L16,7 L16,15 L4,15 Z M7,9 L13,9 M7,12 L11,12", "Workspace"),
+            new("Stars", "我的 Star", "\uE735", "M10,2 L12.5,7.2 L18,8 L14,12 L15,18 L10,15 L5,18 L6,12 L2,8 L7.5,7.2 Z", "Workspace"),
             new("LocalRepos", "本地仓库", "\uE838", "M3,4 L17,4 L17,15 L3,15 Z M6,8 L8,10 L6,12 M10,12 L14,12", "Workspace")
         ];
         SettingsNavigation = new("Settings", "设置", "\uE713", "M10,2 L12,3 L14,2 L16,4 L15,6 L16,8 L18,9 L18,11 L16,12 L15,14 L16,16 L14,18 L12,17 L10,18 L8,17 L6,18 L4,16 L5,14 L4,12 L2,11 L2,9 L4,8 L5,6 L4,4 L6,2 L8,3 Z M10,7 A3,3 0 1 0 10,13 A3,3 0 1 0 10,7", "Footer");
@@ -210,6 +214,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             "Library" => Library,
             "Notifications" => Notifications,
             "MyRepos" => MyRepos,
+            "Stars" => Stars,
             "LocalRepos" => LocalRepos,
             "Settings" => Settings,
             _ => Discover
@@ -227,6 +232,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             case NotificationsViewModel vm: await vm.LoadAsync(); break;
             case MyReposViewModel vm when IsAuthenticated: await vm.LoadRepositoriesAsync(); break;
             case MyReposViewModel vm: vm.SetAuthenticationRequired(); break;
+            case StarsViewModel vm when IsAuthenticated: await vm.LoadRepositoriesAsync(); break;
+            case StarsViewModel vm: vm.SetAuthenticationRequired(); break;
             case LocalReposViewModel vm: await vm.LoadLocalRepositoriesAsync(); break;
             case SettingsViewModel vm: await vm.LoadAsync(); break;
         }
@@ -307,6 +314,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Library.ClearDetailSelection(repositoryId);
         Notifications.ClearDetailSelection(repositoryId);
         MyRepos.ClearDetailSelection(repositoryId);
+        Stars.ClearDetailSelection(repositoryId);
         RightRailMode = RightRailMode.Dashboard;
         OnPropertyChanged(nameof(RightRailContent));
         OnPropertyChanged(nameof(IsRightRailOpen));
@@ -454,6 +462,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             "Library" => "搜索收藏库",
             "Notifications" => "搜索通知",
             "MyRepos" => "搜索我的仓库",
+            "Stars" => "搜索我 Star 的仓库",
             "LocalRepos" => "搜索本地仓库",
             "Settings" => "设置页无需搜索",
             _ => "搜索当前 Feed"
