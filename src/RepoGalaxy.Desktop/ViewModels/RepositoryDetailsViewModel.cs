@@ -57,7 +57,7 @@ public sealed partial class RepositoryDetailsViewModel : ViewModelBase
     private async Task OpenOnGitHubAsync()
     {
         if (!_links.Open(Repository?.HtmlUrl)) Feedback = "无法打开 GitHub 链接，请稍后重试。";
-        else if (Repository is not null) await _recommendations.RecordFeedbackAsync(Repository.Id, FeedbackType.Click);
+        else if (Repository is not null) await _recommendations.RecordFeedbackAsync(Repository, FeedbackType.Click);
     }
 
     [RelayCommand]
@@ -65,9 +65,9 @@ public sealed partial class RepositoryDetailsViewModel : ViewModelBase
     {
         if (Repository is null) return;
         var isNewSave = !Repository.IsBookmarked;
-        await _store.ToggleSavedAsync(Repository.Id);
+        await _store.ToggleSavedAsync(Repository);
         Repository.IsBookmarked = !Repository.IsBookmarked;
-        if (isNewSave) await _recommendations.RecordFeedbackAsync(Repository.Id, FeedbackType.Bookmark);
+        if (isNewSave) await _recommendations.RecordFeedbackAsync(Repository, FeedbackType.Bookmark);
         Feedback = Repository.IsBookmarked ? "已添加到收藏库" : "已从收藏库移除";
         OnPropertyChanged(nameof(SaveText));
     }

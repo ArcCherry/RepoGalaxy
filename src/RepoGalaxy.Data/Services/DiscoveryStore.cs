@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using RepoGalaxy.Core.Interfaces;
 using RepoGalaxy.Core.Models;
 using RepoGalaxy.Data.DbContexts;
 using RepoGalaxy.Data.Entities;
@@ -10,7 +11,12 @@ namespace RepoGalaxy.Data.Services;
 public sealed class DiscoveryStore
 {
     private readonly IDbContextFactory<RepoGalaxyDbContext> _factory;
-    public DiscoveryStore(IDbContextFactory<RepoGalaxyDbContext> factory) => _factory = factory;
+    private readonly IRepositoryService _repositoryService;
+    public DiscoveryStore(IDbContextFactory<RepoGalaxyDbContext> factory, IRepositoryService repositoryService)
+    {
+        _factory = factory;
+        _repositoryService = repositoryService;
+    }
 
     public async Task<IReadOnlyList<DiscoverySubscription>> GetSubscriptionsAsync()
     {
@@ -85,14 +91,23 @@ public sealed class DiscoveryStore
         return rows.OrderByDescending(b => b.BookmarkedAt).Select(b => MapRepository(b.Repository)).ToList();
     }
 
-    public async Task ToggleSavedAsync(long repositoryId, string collection = "Library", string? note = null, IEnumerable<string>? tags = null)
+    public async Task ToggleSavedAsync(Repository model, string collection = "Library", string? note = null, IEnumerable<string>? tags = null)
     {
+        var repositoryId = await _repositoryService.ResolveRepositoryIdAsync(model);
         await using var db = await _factory.CreateDbContextAsync();
         var saved = await db.Bookmarks.Include(b => b.Tags).FirstOrDefaultAsync(b => b.RepositoryId == repositoryId);
         if (saved != null) { db.Bookmarks.Remove(saved); var old = await db.Repositories.FindAsync(repositoryId); if (old != null) old.IsBookmarked = false; await db.SaveChangesWithRetryAsync(); return; }
         saved = new BookmarkEntity { RepositoryId = repositoryId, BookmarkedAt = DateTimeOffset.UtcNow, CollectionName = collection, Notes = note };
         foreach (var tag in tags?.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase) ?? []) saved.Tags.Add(new BookmarkTagEntity { Name = tag.Trim() });
-        db.Bookmarks.Add(saved); var repository = await db.Repositories.FindAsync(repositoryId); if (repository != null) repository.IsBookmarked = true; await db.SaveChangesWithRetryAsync();
+        db.Bookmarks.Add(saved);
+        var repository = await db.Repositories.FindAsync(repositoryId);
+        if (repository == null)
+        {
+            repository = new RepositoryEntity { Id = repositoryId };
+            db.Repositories.Attach(repository);
+        }
+        repository.IsBookmarked = true;
+        await db.SaveChangesWithRetryAsync();
     }
 
     public async Task<IReadOnlyList<Repository>> GetRepositoryCandidatesAsync()
