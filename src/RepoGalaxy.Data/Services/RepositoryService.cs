@@ -22,6 +22,20 @@ public sealed class RepositoryService : IRepositoryService
     public async Task<bool> BookmarkAsync(long repositoryId, string collection = "默认收藏") { await using var db = await _factory.CreateDbContextAsync(); var repo = await db.Repositories.FindAsync(repositoryId); if (repo is null) return false; repo.IsBookmarked = true; var bookmark = await db.Bookmarks.FirstOrDefaultAsync(x => x.RepositoryId == repositoryId); if (bookmark is null) db.Bookmarks.Add(new BookmarkEntity { RepositoryId = repositoryId, CollectionName = collection, BookmarkedAt = DateTimeOffset.UtcNow }); else bookmark.CollectionName = collection; await db.SaveChangesWithRetryAsync(); return true; }
     public async Task<bool> UnbookmarkAsync(long repositoryId) { await using var db = await _factory.CreateDbContextAsync(); var repo = await db.Repositories.FindAsync(repositoryId); if (repo is null) return false; repo.IsBookmarked = false; var bookmark = await db.Bookmarks.FirstOrDefaultAsync(x => x.RepositoryId == repositoryId); if (bookmark is not null) db.Remove(bookmark); await db.SaveChangesWithRetryAsync(); return true; }
     public async Task<bool> IgnoreAsync(long repositoryId) { await using var db = await _factory.CreateDbContextAsync(); var repo = await db.Repositories.FindAsync(repositoryId); if (repo is null) return false; repo.IsIgnored = true; await db.SaveChangesWithRetryAsync(); return true; }
+    public async Task<long> ResolveRepositoryIdAsync(Repository model, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(model.GitHubId)) throw new ArgumentException("Repository.GitHubId 不能为空。", nameof(model));
+        var entity = await db.Repositories.FirstOrDefaultAsync(x => x.GitHubId == model.GitHubId, cancellationToken);
+        if (entity is null)
+        {
+            entity = new RepositoryEntity();
+            Copy(model, entity);
+            db.Repositories.Add(entity);
+            await db.SaveChangesWithRetryAsync(cancellationToken);
+        }
+        return entity.Id;
+    }
     public async Task RecordViewAsync(long repositoryId, ViewSource source, TimeSpan? duration = null) { await using var db = await _factory.CreateDbContextAsync(); var repo = await db.Repositories.FindAsync(repositoryId); if (repo is null) return; repo.ViewCount++; repo.LastViewedAt = DateTimeOffset.UtcNow; db.ViewHistories.Add(new ViewHistoryEntity { RepositoryId = repositoryId, ViewedAt = DateTimeOffset.UtcNow, DurationSeconds = (long)(duration?.TotalSeconds ?? 0), Source = (int)source }); await db.SaveChangesWithRetryAsync(); }
     public async Task<IEnumerable<Repository>> GetCachedAsync(TimeSpan? maxAge = null) { await using var db = await _factory.CreateDbContextAsync(); var cutoff = DateTimeOffset.UtcNow - (maxAge ?? TimeSpan.FromHours(24)); return (await db.Repositories.AsNoTracking().Where(x => x.CachedAt > cutoff && !x.IsIgnored).OrderByDescending(x => x.CachedAt).ToListAsync()).Select(Map).ToList(); }
     public Task RefreshCacheAsync() => ClearOldAsync(TimeSpan.FromDays(7));

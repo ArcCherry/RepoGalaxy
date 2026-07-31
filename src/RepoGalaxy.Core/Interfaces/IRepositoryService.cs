@@ -23,6 +23,11 @@ public interface IRepositoryService
     Task<bool> UnbookmarkAsync(long repositoryId);
     Task<bool> IgnoreAsync(long repositoryId);
     Task RecordViewAsync(long repositoryId, ViewSource source, TimeSpan? duration = null);
+
+    // 解析:给定一个 Repository model(可能来自 API、Id 还未持久化),
+    // 找到或插入对应的 Repositories 行,返回 db 主键。
+    // 用于修复 GitHub DTO 创建的 Repository(Id=0)与 db 持久化 Repository(Id=N)不一致的问题。
+    Task<long> ResolveRepositoryIdAsync(Repository model, CancellationToken cancellationToken = default);
     
     // 缓存
     Task<IEnumerable<Repository>> GetCachedAsync(TimeSpan? maxAge = null);

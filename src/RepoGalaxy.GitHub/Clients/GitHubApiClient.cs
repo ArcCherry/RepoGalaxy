@@ -85,7 +85,20 @@ public sealed class GitHubApiClient : IGitHubClient, IGitHubContributionService,
     public async Task<IEnumerable<Repository>> GetTrendingAsync(string? language = null, string since = "daily", CancellationToken cancellationToken = default) { var days = since.ToLowerInvariant() switch { "weekly" => 7, "monthly" => 30, _ => 1 }; return (await SearchRepositoriesPageAsync($"pushed:>{DateTime.UtcNow.AddDays(-days):yyyy-MM-dd} stars:>100 archived:false fork:false", language, "stars", cancellationToken: cancellationToken)).Items; }
     public async Task<IEnumerable<Repository>> GetUserRepositoriesAsync() { var result = new List<Repository>(); string? next = null; do { var page = await GetUserRepositoriesPageAsync(next); result.AddRange(page.Items); next = page.NextPageUrl; } while (next is not null); return result; }
     public async Task<GitHubPage<Repository>> GetUserRepositoriesPageAsync(string? nextPageUrl = null, CancellationToken cancellationToken = default) => await PageAsync(nextPageUrl ?? "user/repos?visibility=all&affiliation=owner,collaborator,organization_member&sort=updated&per_page=100", cancellationToken);
-    public async Task<GitHubPage<Repository>> GetStarredRepositoriesPageAsync(string? nextPageUrl = null, CancellationToken cancellationToken = default) => await PageAsync(nextPageUrl ?? "user/starred?sort=created&direction=desc&per_page=100", cancellationToken);
+    public async Task<GitHubPage<Repository>> GetStarredRepositoriesPageAsync(string? nextPageUrl = null, CancellationToken cancellationToken = default) => await PageAsync(nextPageUrl ?? "user/starred?sort=created&direction=desc&per_page=20", cancellationToken);
+    public async Task<IEnumerable<Repository>> GetStarredRepositoriesAsync()
+    {
+        var result = new List<Repository>();
+        string? next = null;
+        do
+        {
+            var page = await GetStarredRepositoriesPageAsync(next);
+            result.AddRange(page.Items);
+            next = page.NextPageUrl;
+        }
+        while (next is not null);
+        return result;
+    }
     public async Task<ReleaseInfo?> GetLatestReleaseAsync(string owner, string name, CancellationToken cancellationToken = default) { var response = await SendAsync<ReleaseDto>(HttpMethod.Get, $"repos/{Esc(owner)}/{Esc(name)}/releases/latest", null, cancellationToken); var r = response.Data; return r is null || r.Prerelease || r.Draft || r.PublishedAt is null ? null : new ReleaseInfo { Id = r.Id, TagName = r.TagName, Name = r.Name ?? r.TagName, HtmlUrl = r.HtmlUrl, PublishedAt = r.PublishedAt.Value }; }
     public Task<IEnumerable<Repository>> GetCurrentUserRepositoriesAsync() => GetUserRepositoriesAsync();
     public async Task<List<LanguageInfo>> GetLanguagesAsync(string owner, string name, CancellationToken cancellationToken = default) { var response = await SendAsync<Dictionary<string, long>>(HttpMethod.Get, $"repos/{Esc(owner)}/{Esc(name)}/languages", null, cancellationToken); if (response.Data is null) return []; var total = response.Data.Values.Sum(); return response.Data.Select(x => new LanguageInfo { Name = x.Key, Bytes = x.Value, Percentage = total == 0 ? 0 : (double)x.Value / total }).OrderByDescending(x => x.Bytes).ToList(); }

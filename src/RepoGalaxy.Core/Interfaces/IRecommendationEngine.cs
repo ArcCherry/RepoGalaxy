@@ -32,8 +32,13 @@ public interface IRecommendationEngine
     /// 记录反馈
     /// </summary>
     Task RecordFeedbackAsync(long repositoryId, FeedbackType type);
-}
 
+    /// <summary>
+    /// 记录反馈(推荐用法):给定完整 Repository model,内部解析到 db 主键后再写入。
+    /// 解决 "Repository.Id=0 (来自 GitHub DTO) 导致 FeedImpressions.RepositoryId FK 失败" 的问题。
+    /// </summary>
+    Task RecordFeedbackAsync(Repository model, FeedbackType type);
+}
 public enum FeedbackType
 {
     View = 0,

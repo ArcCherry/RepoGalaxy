@@ -265,8 +265,8 @@ public sealed partial class DiscoverViewModel : ViewModelBase, ISearchablePage, 
         var item = _allItems.FirstOrDefault(x => x.Id == id);
         if (item is null) return;
         var isNewSave = !item.Item.Repository.IsBookmarked;
-        await _store.ToggleSavedAsync(item.Item.RepositoryId);
-        if (isNewSave) await _recommendations.RecordFeedbackAsync(item.Item.RepositoryId, FeedbackType.Bookmark);
+        await _store.ToggleSavedAsync(item.Item.Repository);
+        if (isNewSave) await _recommendations.RecordFeedbackAsync(item.Item.Repository, FeedbackType.Bookmark);
         item.ToggleBookmarked();
         if (_details.Repository?.Id == item.Item.Repository.Id) _details.Show(item.Item.Repository, item.Item.Reason);
     }
@@ -372,7 +372,7 @@ public sealed partial class DiscoverViewModel : ViewModelBase, ISearchablePage, 
     {
         var item = _allItems.FirstOrDefault(x => x.Id == id);
         await _store.MarkReadAsync(id, true);
-        if (item is not null) await _recommendations.RecordFeedbackAsync(item.Item.RepositoryId, FeedbackType.Dismiss);
+        if (item is not null) await _recommendations.RecordFeedbackAsync(item.Item.Repository, FeedbackType.Dismiss);
         if (item is not null) _allItems.Remove(item);
         ApplyFilter();
         NotifyState();
@@ -446,7 +446,7 @@ public sealed partial class DiscoverViewModel : ViewModelBase, ISearchablePage, 
     private async Task RecordExposureAsync(FeedItemViewModel value)
     {
         await _store.MarkReadAsync(value.Id);
-        await _recommendations.RecordFeedbackAsync(value.Item.RepositoryId, FeedbackType.View);
+        await _recommendations.RecordFeedbackAsync(value.Item.Repository, FeedbackType.View);
     }
 
     private void ApplyFilter()
@@ -768,7 +768,14 @@ public sealed partial class LibraryViewModel : ViewModelBase, ISearchablePage
         }
         finally { IsLoading = false; NotifyState(); }
     }
-    [RelayCommand] private async Task RemoveAsync(long id) { await _store.ToggleSavedAsync(id); if (_details.Repository?.Id == id) _details.Close(); await LoadAsync(); }
+    [RelayCommand]
+    private async Task RemoveAsync(long id)
+    {
+        var item = _allItems.FirstOrDefault(x => x.Repository.Id == id);
+        if (item is not null) await _store.ToggleSavedAsync(item.Repository);
+        if (_details.Repository?.Id == id) _details.Close();
+        await LoadAsync();
+    }
     partial void OnSearchTextChanged(string value) => ApplyFilter();
     partial void OnSelectedLanguageChanged(string value) => ApplyFilter();
     partial void OnSelectedSortChanged(string value) => ApplyFilter();

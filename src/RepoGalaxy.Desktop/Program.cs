@@ -210,6 +210,7 @@ class Program
         services.AddSingleton<NotificationsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<MyReposViewModel>();
+        services.AddSingleton<StarsViewModel>();
         services.AddSingleton<LocalReposViewModel>();
 
         return services.BuildServiceProvider();
